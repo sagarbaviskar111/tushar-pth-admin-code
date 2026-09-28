@@ -1,0 +1,91 @@
+/* src/pages/Home.css */
+
+/* General Layout */
+.home-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  /* Sidebar Styles */
+  .sidebar {
+    width: 250px;
+    background-color: #2c3e50;
+    padding: 20px;
+    color: white;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ecf0f1;
+  }
+  
+  .sidebar ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .sidebar ul li {
+    margin: 10px 0;
+  }
+  
+  .sidebar ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    padding: 10px;
+    display: block;
+    transition: background-color 0.3s ease;
+    border-radius: 5px;
+  }
+  
+  .sidebar ul li a:hover {
+    background-color: #2980b9;
+    color: #ecf0f1;
+  }
+  
+  /* Main Content Styles */
+  .main-content {
+    flex-grow: 1;
+    background-color: #ecf0f1;
+    padding: 30px;
+  }
+  
+  .main-content h2 {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #34495e;
+  }
+  
+  .main-content .form-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .home-container {
+      flex-direction: column;
+    }
+  
+    .sidebar {
+      width: 100%;
+      height: auto;
+    }
+  
+    .main-content {
+      padding: 20px;
+    }
+  }
+  

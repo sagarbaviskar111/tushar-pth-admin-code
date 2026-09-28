@@ -1,0 +1,223 @@
+.formContainer {
+    max-width: 650px;
+    margin: 30px auto;
+    padding: 35px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formContainer:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    text-align: center;
+    color: #1e293b;
+    letter-spacing: -0.5px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #475569;
+}
+
+.input, .textarea, .select {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+    width: 100%;
+    color: #1e293b;
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.input:focus, .textarea:focus, .select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.dynamicInput {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.addButton {
+    padding: 10px 16px;
+    background-color: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.addButton:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.addButton:active {
+    transform: translateY(0);
+}
+
+.submitButton {
+    padding: 14px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.2);
+}
+
+.submitButton:hover {
+    box-shadow: 0 6px 15px rgba(34, 197, 94, 0.3);
+    transform: translateY(-2px);
+}
+
+.submitButton:active {
+    transform: translateY(0);
+}
+
+.error {
+    color: #ef4444;
+    font-size: 13px;
+    margin-top: -12px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.listItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    transition: background-color 0.2s;
+}
+
+.listItem:hover {
+    background: #f1f5f9;
+}
+
+.deleteButton {
+    background: #fee2e2;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.deleteButton:hover {
+    background: #fecaca;
+    color: #b91c1c;
+}
+
+/* Mode Toggle */
+.modeToggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.modeToggle label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    color: #334155;
+    font-size: 15px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.modeToggle label:hover {
+    background-color: #f1f5f9;
+}
+
+.modeToggle input[type="radio"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .formContainer {
+        padding: 20px;
+        margin: 15px auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .title {
+        font-size: 22px;
+    }
+
+    .input, .textarea, .select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .dynamicInput {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .addButton {
+        width: 100%;
+    }
+    
+    .modeToggle {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .modeToggle label {
+        padding: 12px;
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        justify-content: center;
+    }
+}
+
