@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './AddJob.css';
 import BASE_API_URL, { NEXT_API_URL } from '../utils/apiConfig';
 import validators from '../utils/validators';
@@ -136,6 +136,8 @@ const AddJob = () => {
     const [interviewQuestion, setInterviewQuestion] = useState({ question: '', answer: '' });
     const [imageFile, setImageFile] = useState(null);
     const [logoFile, setLogoFile] = useState(null);
+    const autoLogoRef = useRef(false);      // true while logoFile was auto-loaded (not user-picked)
+    const logoLookupIdRef = useRef(0);      // ignores out-of-order logo lookups while typing
     const [sourceScreenshotFile, setSourceScreenshotFile] = useState(null);
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -264,21 +266,49 @@ const AddJob = () => {
             [name]: value,
         }));
         
-        if (name === 'company' && value.trim().length > 2) {
+        if (name === 'company') {
+            const lookupId = ++logoLookupIdRef.current;
+            const isStale = () => lookupId !== logoLookupIdRef.current;
+            const setAutoLogo = (file) => {
+                autoLogoRef.current = true;
+                setLogoFile(file);
+            };
+            // Drop a previously auto-loaded logo (never a manually uploaded one) when no logo is found for this company
+            const clearAutoLogo = () => {
+                if (autoLogoRef.current) {
+                    autoLogoRef.current = false;
+                    setLogoFile(null);
+                }
+            };
+
+            if (value.trim().length <= 2) {
+                clearAutoLogo();
+                return;
+            }
+
             try {
                 const savedLogo = await fetchSavedCompanyLogo(value);
+                if (isStale()) return;
                 if (savedLogo) {
-                    setLogoFile(savedLogo);
+                    setAutoLogo(savedLogo);
                     return;
                 }
-                const res = await fetch(`${NEXT_API_URL}/api/company-logos?company=${encodeURIComponent(value.trim())}`);
-                const data = await res.json();
-                if (data.exists) {
-                    const blobRes = await fetch(`${NEXT_API_URL}${data.url}`);
-                    const blob = await blobRes.blob();
-                    const file = new File([blob], "auto-logo.png", { type: "image/png" });
-                    setLogoFile(file);
-                } else {
+                let found = false;
+                try {
+                    const res = await fetch(`${NEXT_API_URL}/api/company-logos?company=${encodeURIComponent(value.trim())}`);
+                    const data = await res.json();
+                    if (data.exists) {
+                        const blobRes = await fetch(`${NEXT_API_URL}${data.url}`);
+                        const blob = await blobRes.blob();
+                        const file = new File([blob], "auto-logo.png", { type: "image/png" });
+                        if (isStale()) return;
+                        setAutoLogo(file);
+                        found = true;
+                    }
+                } catch (err) {
+                    console.warn("Legacy logo store unavailable", err);
+                }
+                if (!found) {
                     // Try Clearbit if not found locally
                     const domain = value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
                     const logoUrl = `https://logo.clearbit.com/${domain}`;
@@ -287,12 +317,16 @@ const AddJob = () => {
                         const blob = await logoResponse.blob();
                         const file = new File([blob], "logo.png", { type: blob.type });
                         const processed = await processLogo(file);
-                        setLogoFile(processed);
+                        if (isStale()) return;
+                        setAutoLogo(processed);
                         resizeAndSaveLogo(processed, value.trim());
+                        found = true;
                     }
                 }
+                if (!found && !isStale()) clearAutoLogo();
             } catch (err) {
                 console.error("Could not check/load auto logo", err);
+                if (!isStale()) clearAutoLogo();
             }
         }
     };
@@ -315,6 +349,7 @@ const AddJob = () => {
         if (file) {
             const validation = validators.validateFile(file, 'image/*', 5 * 1024 * 1024);
             if (validation.isValid) {
+                autoLogoRef.current = false;
                 setLogoFile(file);
                 setErrors(errors.filter(err => !err.includes('logo')));
             } else {
@@ -564,6 +599,7 @@ const AddJob = () => {
                 // Logo saved from an earlier job for this company
                 fetchedLogoFile = await fetchSavedCompanyLogo(parsedData.company);
                 if (fetchedLogoFile) {
+                    autoLogoRef.current = true;
                     setLogoFile(fetchedLogoFile);
                 } else {
                     // Legacy Next.js logo store
@@ -574,6 +610,7 @@ const AddJob = () => {
                             const blobRes = await fetch(`${NEXT_API_URL}${data.url}`);
                             const blob = await blobRes.blob();
                             fetchedLogoFile = new File([blob], 'auto-logo.png', { type: 'image/png' });
+                            autoLogoRef.current = true;
                             setLogoFile(fetchedLogoFile);
                         }
                     } catch(e) {
@@ -598,6 +635,7 @@ const AddJob = () => {
                                 console.warn('Could not process clearbit logo', e);
                             }
 
+                            autoLogoRef.current = true;
                             setLogoFile(fetchedLogoFile);
                             
                             // Save this newly fetched logo so it's reused!
