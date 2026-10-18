@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Layout.css';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -55,6 +55,9 @@ const Layout = ({ children }) => {
             <Link to="/list-ads">List Of Ads</Link>
           </li>
         </ul>
+        <button className="logout-button" onClick={onLogout}>
+          Logout
+        </button>
       </div>
 
       {/* Main Content */}
