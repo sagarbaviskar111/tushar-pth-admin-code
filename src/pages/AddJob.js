@@ -7,8 +7,14 @@ import { AI_SYSTEM_PROMPT } from '../utils/aiPrompt';
 import { generateJobBanner } from '../utils/bannerGenerator';
 
 // File validation helper
-function validateFiles(imageFile, logoFile, maxSizeBytes = 10 * 1024 * 1024) {
+function validateFiles(imageFile, logoFile, maxSizeBytes = 10 * 1024 * 1024, sourceScreenshotFile = null) {
     if (!imageFile) throw new Error('Image file is required.');
+    if (!sourceScreenshotFile) throw new Error('Source reference screenshot is required.');
+    if (!sourceScreenshotFile.type.startsWith('image/')) throw new Error('Source reference screenshot must be an image file.');
+    if (sourceScreenshotFile.size > maxSizeBytes) {
+        const maxMB = Math.round(maxSizeBytes / (1024 * 1024));
+        throw new Error(`Source reference screenshot exceeds max size of ${maxMB}MB.`);
+    }
     if (!imageFile.type.startsWith('image/')) throw new Error('Image must be an image file.');
     if (imageFile.size > maxSizeBytes) {
         const maxMB = Math.round(maxSizeBytes / (1024 * 1024));
@@ -42,7 +48,7 @@ function resizeAndSaveLogo(file, companyName) {
 }
 
 // Build FormData with correct field names
-function buildJobFormData(values, imageFile, logoFile) {
+function buildJobFormData(values, imageFile, logoFile, sourceScreenshotFile) {
     const form = new FormData();
     form.append('company', values.company || '');
     form.append('positionName', values.positionName || '');
@@ -62,6 +68,7 @@ function buildJobFormData(values, imageFile, logoFile) {
     form.append('driveContactNumber', values.driveContactNumber || '');
     if (values.applicationDeadline) form.append('applicationDeadline', values.applicationDeadline);
     form.append('type', values.type || '');
+    form.append('sourceReferenceLink', values.sourceReferenceLink || '');
     
     // Arrays: append each entry separately
     (values.responsibilities || []).forEach(r => form.append('responsibilities', r));
@@ -74,7 +81,8 @@ function buildJobFormData(values, imageFile, logoFile) {
     // Files
     form.append('image', imageFile);
     if (logoFile) form.append('logo', logoFile);
-    
+    form.append('sourceReferenceScreenshot', sourceScreenshotFile);
+
     return form;
 }
 
@@ -101,6 +109,7 @@ const AddJob = () => {
         driveContactNumber: '',
         applicationDeadline: '',
         type: '',
+        sourceReferenceLink: '',
         commonInterviewQuestions: []
     });
     const [responsibility, setResponsibility] = useState('');
@@ -108,6 +117,7 @@ const AddJob = () => {
     const [interviewQuestion, setInterviewQuestion] = useState({ question: '', answer: '' });
     const [imageFile, setImageFile] = useState(null);
     const [logoFile, setLogoFile] = useState(null);
+    const [sourceScreenshotFile, setSourceScreenshotFile] = useState(null);
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -289,6 +299,19 @@ const AddJob = () => {
         }
     };
 
+    const handleSourceScreenshotChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const validation = validators.validateFile(file, 'image/*', 5 * 1024 * 1024);
+            if (validation.isValid) {
+                setSourceScreenshotFile(file);
+                setErrors(errors.filter(err => !err.includes('screenshot')));
+            } else {
+                setErrors([...errors.filter(err => !err.includes('screenshot')), validation.error]);
+            }
+        }
+    };
+
     const handleDeleteResponsibility = (index) => {
         setJob({
             ...job,
@@ -431,9 +454,9 @@ const AddJob = () => {
 
             const groqModels = aiScreenshots.length > 0 
                 ? [] // Groq has decommissioned their vision models
-                : ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'canopylabs/orpheus-v1-english'];
+                : ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
             
-            const geminiModels = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+            const geminiModels = ['gemini-flash-latest', 'gemini-2.5-flash'];
             
             let result = null;
             let lastError = null;
@@ -670,7 +693,7 @@ const AddJob = () => {
             }
 
             // Validate files
-            validateFiles(imageFile, logoFile, 10 * 1024 * 1024);
+            validateFiles(imageFile, logoFile, 10 * 1024 * 1024, sourceScreenshotFile);
 
             // Get auth token
             const token = localStorage.getItem('token');
@@ -681,7 +704,7 @@ const AddJob = () => {
             }
 
             // Build FormData with correct field names
-            const formData = buildJobFormData(job, imageFile, logoFile);
+            const formData = buildJobFormData(job, imageFile, logoFile, sourceScreenshotFile);
 
             // Log file sizes for debugging
             console.log('image size:', imageFile.size, 'bytes');
@@ -748,10 +771,12 @@ const AddJob = () => {
                 driveContactNumber: '',
                 applicationDeadline: '',
                 type: '',
+                sourceReferenceLink: '',
                 commonInterviewQuestions: []
             });
             setImageFile(null);
             setLogoFile(null);
+            setSourceScreenshotFile(null);
             setErrors([]);
         } catch (error) {
             console.error('Error:', error);
@@ -1024,6 +1049,15 @@ const AddJob = () => {
                     <label className="label">Image Upload: * (max 5MB)
                         <input type="file" accept="image/*" onChange={handleFileChange} className="input" disabled={loading} />
                         {imageFile && <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {imageFile.name}</span>}
+                    </label>
+
+                    <label className="label">Source Reference Link: (Optional)
+                        <input type="text" name="sourceReferenceLink" value={job.sourceReferenceLink} onChange={handleChange} className="input" placeholder="https://example.com/original-job-post" disabled={loading} />
+                    </label>
+
+                    <label className="label">Source Reference Screenshot: * (max 5MB)
+                        <input type="file" accept="image/*" onChange={handleSourceScreenshotChange} className="input" disabled={loading} />
+                        {sourceScreenshotFile && <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {sourceScreenshotFile.name}</span>}
                     </label>
 
                     <label className="label">Logo Upload: (max 5MB)

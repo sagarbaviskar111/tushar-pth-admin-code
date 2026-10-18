@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BASE_API_URL from '../utils/apiConfig';
 
 const Login = ({ onLogin }) => {
     const [email, setEmail] = useState('');
@@ -6,27 +7,34 @@ const Login = ({ onLogin }) => {
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const handleLoginSubmit = (e) => {
+    const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setErrors([]);
         setLoading(true);
 
-        // Accept either set of credentials
-        const isValidMainAdmin = email === 'admin@pharmatalenthub.in' && password === 'ClinideaEducation@2024';
-        const isValidSuperAdmin = email === 'admin@clinidea.in' && password === 'PharmaTalentHub@2024';
+        try {
+            const response = await fetch(`${BASE_API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.trim(), password }),
+            });
+            const data = await response.json().catch(() => ({}));
 
-        if (!isValidMainAdmin && !isValidSuperAdmin) {
-            setErrors(['Invalid credentials. Please use the authorized admin ID and password.']);
+            if (!response.ok || !data.token) {
+                const msg = data.message || (data.errors && data.errors[0] && data.errors[0].msg) || 'Invalid email or password';
+                setErrors([msg]);
+                return;
+            }
+
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userEmail', data.email);
+            onLogin();
+        } catch (err) {
+            console.error('Login error:', err);
+            setErrors(['Could not reach the server. Please try again.']);
+        } finally {
             setLoading(false);
-            return;
         }
-
-        // Direct Login Success!
-        localStorage.setItem('token', 'dummy-token-for-now');
-        localStorage.setItem('userEmail', email);
-        alert('Login Successful!');
-        onLogin();
-        setLoading(false);
     };
 
     return (

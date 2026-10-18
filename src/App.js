@@ -31,6 +31,7 @@ function App() {
   // Clear authentication state on logout
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
     setIsAuthenticated(false);
   };
 
