@@ -30,6 +30,25 @@ function validateFiles(imageFile, logoFile, maxSizeBytes = 10 * 1024 * 1024, sou
     return true;
 }
 
+// Look up a logo already saved for this company (from earlier jobs); returns a File or null
+async function fetchSavedCompanyLogo(companyName) {
+    const company = (companyName || '').trim();
+    if (!company) return null;
+    try {
+        const res = await fetch(`${BASE_API_URL}/api/jobs/company-logo?company=${encodeURIComponent(company)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data.exists) return null;
+        const imgRes = await fetch(data.url);
+        if (!imgRes.ok) return null;
+        const blob = await imgRes.blob();
+        return new File([blob], 'saved-logo.png', { type: blob.type || 'image/png' });
+    } catch (err) {
+        console.warn('Could not load saved company logo', err);
+        return null;
+    }
+}
+
 // Helper to save logo to Next.js backend mapped to company name
 function resizeAndSaveLogo(file, companyName) {
     if (!companyName || !file) return;
@@ -247,6 +266,11 @@ const AddJob = () => {
         
         if (name === 'company' && value.trim().length > 2) {
             try {
+                const savedLogo = await fetchSavedCompanyLogo(value);
+                if (savedLogo) {
+                    setLogoFile(savedLogo);
+                    return;
+                }
                 const res = await fetch(`${NEXT_API_URL}/api/company-logos?company=${encodeURIComponent(value.trim())}`);
                 const data = await res.json();
                 if (data.exists) {
@@ -537,18 +561,24 @@ const AddJob = () => {
             let fetchedLogoFile = null;
             let logoUrl = null;
             if (parsedData.company) {
-                // Check backend Next.js API first
-                try {
-                    const res = await fetch(`${NEXT_API_URL}/api/company-logos?company=${encodeURIComponent(parsedData.company.trim())}`);
-                    const data = await res.json();
-                    if (data.exists) {
-                        const blobRes = await fetch(`${NEXT_API_URL}${data.url}`);
-                        const blob = await blobRes.blob();
-                        fetchedLogoFile = new File([blob], 'auto-logo.png', { type: 'image/png' });
-                        setLogoFile(fetchedLogoFile);
+                // Logo saved from an earlier job for this company
+                fetchedLogoFile = await fetchSavedCompanyLogo(parsedData.company);
+                if (fetchedLogoFile) {
+                    setLogoFile(fetchedLogoFile);
+                } else {
+                    // Legacy Next.js logo store
+                    try {
+                        const res = await fetch(`${NEXT_API_URL}/api/company-logos?company=${encodeURIComponent(parsedData.company.trim())}`);
+                        const data = await res.json();
+                        if (data.exists) {
+                            const blobRes = await fetch(`${NEXT_API_URL}${data.url}`);
+                            const blob = await blobRes.blob();
+                            fetchedLogoFile = new File([blob], 'auto-logo.png', { type: 'image/png' });
+                            setLogoFile(fetchedLogoFile);
+                        }
+                    } catch(e) {
+                        console.warn('Could not fetch auto logo from API', e);
                     }
-                } catch(e) {
-                    console.warn('Could not fetch auto logo from API', e);
                 }
 
                 // If not found locally, try Clearbit
@@ -1051,15 +1081,6 @@ const AddJob = () => {
                         {imageFile && <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {imageFile.name}</span>}
                     </label>
 
-                    <label className="label">Source Reference Link: (Optional)
-                        <input type="text" name="sourceReferenceLink" value={job.sourceReferenceLink} onChange={handleChange} className="input" placeholder="https://example.com/original-job-post" disabled={loading} />
-                    </label>
-
-                    <label className="label">Source Reference Screenshot: * (max 5MB)
-                        <input type="file" accept="image/*" onChange={handleSourceScreenshotChange} className="input" disabled={loading} />
-                        {sourceScreenshotFile && <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {sourceScreenshotFile.name}</span>}
-                    </label>
-
                     <label className="label">Logo Upload: (max 5MB)
                         <input type="file" accept="image/*" onChange={handleFileChange2} className="input" disabled={loading} />
                         {logoFile && <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {logoFile.name}</span>}
@@ -1076,6 +1097,15 @@ const AddJob = () => {
                                 </a>
                             </div>
                         )}
+                    </label>
+                    
+                    <label className="label">Source Reference Link: (Optional)
+                        <input type="text" name="sourceReferenceLink" value={job.sourceReferenceLink} onChange={handleChange} className="input" placeholder="https://example.com/original-job-post" disabled={loading} />
+                    </label>
+
+                    <label className="label">Source Reference Screenshot: * (max 5MB)
+                        <input type="file" accept="image/*" onChange={handleSourceScreenshotChange} className="input" disabled={loading} />
+                        {sourceScreenshotFile && <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {sourceScreenshotFile.name}</span>}
                     </label>
 
                     <label className="label">Department: *

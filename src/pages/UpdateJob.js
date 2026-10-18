@@ -30,6 +30,7 @@ const UpdateJob = () => {
         driveContactPerson: '',
         driveContactNumber: '',
         commonInterviewQuestions: [],
+        sourceReferenceLink: '',
     });
     const [responsibility, setResponsibility] = useState('');
     const [skill, setSkill] = useState('');
@@ -194,6 +195,12 @@ const UpdateJob = () => {
                     }
                 } else if (job[key] instanceof File) {
                     formData.append(key, job[key]);
+                } else if (key === 'sourceReferenceScreenshot') {
+                    // existing screenshot URL: only a newly picked file is uploaded
+                    continue;
+                } else if (key === 'sourceReferenceLink') {
+                    // always send so the link can be cleared
+                    formData.append(key, job[key] || '');
                 } else if (job[key] !== '') {
                     formData.append(key, job[key]);
                 }
@@ -506,6 +513,42 @@ const UpdateJob = () => {
                         className="fileInput"
                         disabled={loading}
                     />
+                </label>
+
+                <label className="label">
+                    Source Reference Link: (Optional)
+                    <input
+                        type="text"
+                        name="sourceReferenceLink"
+                        value={job.sourceReferenceLink || ''}
+                        onChange={handleChange}
+                        className="input"
+                        placeholder="https://example.com/original-job-post"
+                        disabled={loading}
+                    />
+                </label>
+
+                <label className="label">
+                    Source Reference Screenshot (max 5MB):
+                    {typeof job.sourceReferenceScreenshot === 'string' && job.sourceReferenceScreenshot && (
+                        <span style={{ display: 'block', margin: '6px 0' }}>
+                            Current:{' '}
+                            <a href={job.sourceReferenceScreenshot} target="_blank" rel="noopener noreferrer">
+                                <img src={job.sourceReferenceScreenshot} alt="Source reference" style={{ maxHeight: '80px', verticalAlign: 'middle' }} />
+                            </a>
+                        </span>
+                    )}
+                    <input
+                        type="file"
+                        name="sourceReferenceScreenshot"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="fileInput"
+                        disabled={loading}
+                    />
+                    {job.sourceReferenceScreenshot instanceof File && (
+                        <span style={{ marginLeft: '10px', color: '#10b981' }}>✓ Selected: {job.sourceReferenceScreenshot.name}</span>
+                    )}
                 </label>
 
                 <button type="submit" className="submitButton" disabled={loading}>
